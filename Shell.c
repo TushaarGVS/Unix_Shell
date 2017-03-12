@@ -28,6 +28,8 @@ int sh_write (char **args) ;
 int sh_time (char **args) ;
 int sh_append (char **args) ;
 int sh_rename (char **args) ;
+int sh_matchpat (char **args) ;
+int sh_list (char **args) ;
 
 int launcher (char **args) ;
 int execute (char **args) ;
@@ -47,6 +49,8 @@ char *built_in_string[] = {
   "rmfile",
   "cpfile",
   "rename",
+  "matchpat",
+  "list",
   "calc",
   "time",
   "help",
@@ -62,6 +66,8 @@ int (*built_in_function[]) (char **) = {
   &sh_rmfile,
   &sh_cpfile,
   &sh_rename,
+  &sh_matchpat,
+  &sh_list,
   &sh_calc,
   &sh_time,
   &sh_help,
@@ -77,6 +83,8 @@ char *built_in_string_help[] = {
   "Remove an existing file permanently (1 file at a time).",
   "Copy one file to another (overwrite).", 
   "Renames any given filename based on the given alternative.",
+  "A basic command to serve the purpose of pattern matching.",
+  "Command to list all the files and folders in a given directory",
   "Basic one-digit calculator used for computation (2 arguments at a time).",
   "Returns the current time based on the current time zone.",
   "Manual page for the generated shell.",
@@ -290,6 +298,41 @@ int sh_rename (char **args) {
       fprintf(stderr, "ERROR: Failed to rename.\n") ;
       return 1 ;
     }
+  return 1 ;
+}
+
+/* sh_matchpat: Matches patterns in files */
+
+int sh_matchpat (char **args) {
+  if (args[1] == NULL && args[2] == NULL)
+    fprintf(stderr, "ERROR: Invalid number of arguments.\n") ;
+  else {
+    int fd = open(args[2], O_RDONLY), position = 0 ;
+    char content, line[COPY_BUFFER] ;
+    memset (line, 0, sizeof(line)) ;
+    if (fd == -1) {
+      fprintf(stderr, "ERROR: Cannot read the file") ;
+      return 1 ;
+    }
+    ssize_t bytes ;
+    while ((bytes = read(fd, &content, sizeof(char))) > 0) {
+      if (content != '\n') {
+	line[position] = content ;
+	position++ ;
+      } else {
+	if (strstr(line, args[1]) != NULL)
+	  printf("%s\n", line) ;
+	memset (line, 0, sizeof(line)) ;
+	position = 0 ;
+      }
+    }
+    return 1 ;
+  }
+}
+
+/* sh_list: List files and folders in a given directory */
+
+int sh_list (char **args) {
   return 1 ;
 }
 
