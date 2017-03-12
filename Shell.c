@@ -77,7 +77,7 @@ char *built_in_string_help[] = {
   "Remove an existing file permanently (1 file at a time).",
   "Copy one file to another (overwrite).", 
   "Renames any given filename based on the given alternative.",
-  "Basic calculator used for computation (2 arguments at a time).",
+  "Basic one-digit calculator used for computation (2 arguments at a time).",
   "Returns the current time based on the current time zone.",
   "Manual page for the generated shell.",
   "Terminate the shell altogether."
