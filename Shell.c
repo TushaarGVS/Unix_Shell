@@ -379,8 +379,11 @@ int sh_list (char **args) {
   system("tput sgr0") ;
   for(int i = 0; i < count; i++) {
     stat(files[i]->d_name, &file_stat) ;
-    if (S_ISDIR(file_stat.st_mode)) {
+    if (S_ISDIR(file_stat.st_mode)) {    // Directory
       system("tput setaf 2") ;
+      system("tput bold") ;
+    } else if (file_stat.st_mode & S_IXUSR) {    // Executable
+      system("tput setaf 6") ;
       system("tput bold") ;
     }
     printf("%s\n", files[i]->d_name) ;
