@@ -92,7 +92,7 @@ char *built_in_string_help[] = {
   "Remove an existing file permanently (1 file at a time).",
   "Copy one file to another (overwrite).", 
   "Renames any given filename based on the given alternative.",
-  "Gives information about the given file.",
+  "Gives information about the given file, like file permissions.",
   "A basic command to serve the purpose of pattern matching.",
   "Command to list all the files and folders in a given directory.",
   "Basic one-digit calculator used for computation (2 arguments at a time).",
@@ -256,7 +256,7 @@ int sh_write (char **args) {
     int fd = open(args[1], O_WRONLY | O_CREAT | O_TRUNC, 0644) ;
     char content[COPY_BUFFER] ;
     if (fd == -1) {
-      fprintf(stderr, "ERROR: File cannot be opened (or) \"%s\" is a directory.\n", args[1]) ;
+      fprintf(stderr, "ERROR: File cannot be opened (or) \"%s\" is a directory/ an executable.\n", args[1]) ;
       return 1 ;
     }
     ssize_t bytes ;
