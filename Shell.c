@@ -2,9 +2,12 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
+#include <dirent.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/param.h>
 #include <fcntl.h>
+#include <sys/dir.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/types.h>
@@ -13,6 +16,9 @@
 #define COPY_BUFFER 8192
 #define TOKEN_SIZE 64
 #define TOKEN_DELIMITER " \t\r\n\a"
+
+extern int alphasort() ;
+// Built-in routine to sort an array alphabetically
 
 /* Function prototypes */
 
@@ -30,6 +36,7 @@ int sh_append (char **args) ;
 int sh_rename (char **args) ;
 int sh_matchpat (char **args) ;
 int sh_list (char **args) ;
+int sh_file (char **args) ;
 
 int launcher (char **args) ;
 int execute (char **args) ;
@@ -49,6 +56,7 @@ char *built_in_string[] = {
   "rmfile",
   "cpfile",
   "rename",
+  "file",
   "matchpat",
   "list",
   "calc",
@@ -66,6 +74,7 @@ int (*built_in_function[]) (char **) = {
   &sh_rmfile,
   &sh_cpfile,
   &sh_rename,
+  &sh_file,
   &sh_matchpat,
   &sh_list,
   &sh_calc,
@@ -83,8 +92,9 @@ char *built_in_string_help[] = {
   "Remove an existing file permanently (1 file at a time).",
   "Copy one file to another (overwrite).", 
   "Renames any given filename based on the given alternative.",
+  "Gives information about the given file.",
   "A basic command to serve the purpose of pattern matching.",
-  "Command to list all the files and folders in a given directory",
+  "Command to list all the files and folders in a given directory.",
   "Basic one-digit calculator used for computation (2 arguments at a time).",
   "Returns the current time based on the current time zone.",
   "Manual page for the generated shell.",
@@ -164,6 +174,7 @@ int sh_rmfile (char **args) {
       fprintf(stderr, "ERROR: File not deleted.\n") ;
       return 1 ;
     }
+  remove(args[1]) ;
   return 1 ;
 }
 
@@ -245,7 +256,7 @@ int sh_write (char **args) {
     int fd = open(args[1], O_WRONLY | O_CREAT | O_TRUNC, 0644) ;
     char content[COPY_BUFFER] ;
     if (fd == -1) {
-      fprintf(stderr, "ERROR: File cannot be opened.\n") ;
+      fprintf(stderr, "ERROR: File cannot be opened (or) \"%s\" is a directory.\n", args[1]) ;
       return 1 ;
     }
     ssize_t bytes ;
@@ -332,8 +343,88 @@ int sh_matchpat (char **args) {
 
 /* sh_list: List files and folders in a given directory */
 
+/* file_select: Selects specific files (leaves out '.', '..', '.*') */
+
+static int file_select (const struct direct *entry) {
+  char name[COPY_BUFFER] ;
+  if ((strcmp(entry->d_name, ".") == 0) || (strcmp(entry->d_name, "..") == 0))
+    return 0 ;
+  else {
+    // index(string s, char c): First occurence of 'c' in 's'
+    // rindex(string s, char c): Last occurence of 'c' in 's'
+    strcpy (name, entry->d_name) ;
+    if (name[0] == '.')
+      return 0 ;
+    return 1 ;
+  }
+}
+
 int sh_list (char **args) {
+  struct direct **files ;
+  char pathname[MAXPATHLEN] ;     // MAXPATHLEN: sys/param.h
+  if (getcwd(pathname, sizeof(pathname)) == NULL) {
+    fprintf(stderr, "ERROR: Cannot get the path.\n") ;
+    return 1 ;
+  }
+  int count = scandir(pathname, &files, file_select, alphasort) ;
+  // int count = scandir(pathname, &files, 0, alphasort) ;
+  
+  if (count < 1) {
+    fprintf(stderr, "ERROR: No files found in this directory.\n") ;
+    return 1 ;
+  }
+  struct stat file_stat ;
+  system("tput setaf 3") ;
+  printf("Total files in %s: %d\n", pathname, count) ;
+  system("tput sgr0") ;
+  for(int i = 0; i < count; i++) {
+    stat(files[i]->d_name, &file_stat) ;
+    if (S_ISDIR(file_stat.st_mode)) {
+      system("tput setaf 2") ;
+      system("tput bold") ;
+    }
+    printf("%s\n", files[i]->d_name) ;
+    system("tput sgr0") ;
+    // scandir: Only allocates memory and doesnot deallocate
+    free(files[i]) ;
+  }
   return 1 ;
+}
+
+/* sh_file: Gives information about the file */
+
+int sh_file (char **args) {
+  if (args[1] == NULL)
+    fprintf(stderr, "ERROR: Filename necessary.\n") ;
+  else {
+    struct stat file_stat ;
+    if (stat(args[1], &file_stat) < 0) {
+      fprintf(stderr, "ERROR: File statistics couldnot be loaded.\n") ;
+      return 1 ;
+    }
+    system("tput setaf 3") ;
+    printf("Information about %s:\n", args[1]) ;
+    system("tput sgr0") ;
+    printf("File Size: \t\t%ld bytes.\n", file_stat.st_size) ;
+    printf("Number of Links: \t%ld.\n", file_stat.st_nlink) ;
+    printf("File inode: \t\t%ld.\n", file_stat.st_ino) ;
+
+    printf("File Permissions: \t") ;
+    printf((S_ISDIR(file_stat.st_mode)) ? "d" : "-") ;
+    printf((file_stat.st_mode & S_IRUSR) ? "r" : "-") ;
+    printf((file_stat.st_mode & S_IWUSR) ? "w" : "-") ;
+    printf((file_stat.st_mode & S_IXUSR) ? "x" : "-") ;
+    printf((file_stat.st_mode & S_IRGRP) ? "r" : "-") ;
+    printf((file_stat.st_mode & S_IWGRP) ? "w" : "-") ;
+    printf((file_stat.st_mode & S_IXGRP) ? "x" : "-") ;
+    printf((file_stat.st_mode & S_IROTH) ? "r" : "-") ;
+    printf((file_stat.st_mode & S_IWOTH) ? "w" : "-") ;
+    printf((file_stat.st_mode & S_IXOTH) ? "x" : "-") ;
+    printf("\n\n");
+ 
+    printf("The file \'%s\' a symbolic link.\n", (S_ISLNK(file_stat.st_mode)) ? "is" : "is not");
+  }
+  return 1 ; 
 }
 
 /* launcher: Launches the custom shell */
