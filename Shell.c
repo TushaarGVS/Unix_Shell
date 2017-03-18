@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <sys/dir.h>
 #include <sys/stat.h>
+#include <curses.h>
 #include <sys/wait.h>
 #include <sys/types.h>
 
@@ -37,6 +38,7 @@ int sh_rename (char **args) ;
 int sh_matchpat (char **args) ;
 int sh_list (char **args) ;
 int sh_file (char **args) ;
+int sh_clrscr (char **args) ;
 
 int launcher (char **args) ;
 int execute (char **args) ;
@@ -61,6 +63,7 @@ char *built_in_string[] = {
   "list",
   "calc",
   "time",
+  "clrscr",
   "help",
   "exit"
 } ;
@@ -79,6 +82,7 @@ int (*built_in_function[]) (char **) = {
   &sh_list,
   &sh_calc,
   &sh_time,
+  &sh_clrscr,
   &sh_help,
   &sh_exit
 } ;
@@ -97,6 +101,7 @@ char *built_in_string_help[] = {
   "Command to list all the files and folders in a given directory.",
   "Basic one-digit calculator used for computation (2 arguments at a time).",
   "Returns the current time based on the current time zone.",
+  "Clears the screen buffer of the shell.",
   "Manual page for the generated shell.",
   "Terminate the shell altogether."
 } ;
@@ -428,6 +433,13 @@ int sh_file (char **args) {
     printf("The file \'%s\' a symbolic link.\n", (S_ISLNK(file_stat.st_mode)) ? "is" : "is not");
   }
   return 1 ; 
+}
+
+/* sh_clrscr: Clear the screen buffer */
+
+int sh_clrscr (char **args) {
+  system("clear") ;
+  return 1 ;
 }
 
 /* launcher: Launches the custom shell */
