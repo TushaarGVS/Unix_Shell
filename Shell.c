@@ -3,6 +3,7 @@
 #include <math.h>
 #include <time.h>
 #include <dirent.h>
+#include <term.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/param.h>
@@ -99,10 +100,10 @@ char *built_in_string_help[] = {
   "Gives information about the given file, like file permissions.",
   "A basic command to serve the purpose of pattern matching.",
   "Command to list all the files and folders in a given directory.",
-  "Basic one-digit calculator used for computation (2 arguments at a time).",
+  "Basic n-digit calculator used for computation (2 arguments at a time).",
   "Returns the current time based on the current time zone.",
-  "Clears the screen buffer of the shell.",
-  "Manual page for the generated shell.",
+  "Clears the screen buffer of the custom shell.",
+  "Manual page for the custom generated shell.",
   "Terminate the shell altogether."
 } ;
 
@@ -247,7 +248,7 @@ int sh_calc (char **args) {
     return 1 ;
   }
   char expr[128] ;
-  snprintf(expr, sizeof(expr)-1, "echo %c%c%c | bc", *args[1], *args[2], *args[3]) ;
+  sprintf(expr, "echo %s%s%s | bc", args[1], args[2], args[3]) ;
   system(expr) ;
   return 1 ;
 }
